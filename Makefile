@@ -1,2 +1,2 @@
-cite: cite.c 
-	gcc -Wall -Werror -pedantic -g test.c cite.c -o cite 
+cite: cite.c cite.h test.c
+	gcc -Wall -Werror -pedantic -g cite.c test.c -o cite 
