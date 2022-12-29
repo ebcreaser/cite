@@ -2,7 +2,9 @@
 #include <string.h>
 #include "cite.h"
 
-void
+static void strindent(char *str, int c);
+
+static void
 strindent(char *str, int c)
 {
 	int i;
@@ -13,8 +15,50 @@ strindent(char *str, int c)
 	str[i] = '\0';
 }
 
+struct htmles *
+htmlesalloc(char *tag, char *text, int contentc)
+{
+	struct htmles *htmlesp;
+
+	if ((htmlesp = malloc(sizeof(struct htmles))) == NULL) {
+		return NULL;
+	}
+	if ((htmlesp->tag = malloc((strlen(tag) + 1) * sizeof(char))) == NULL) {
+		return NULL;
+	}
+	strcpy(htmlesp->tag, tag);
+	if (contentc > 0) {
+		if ((htmlesp->contentv = malloc(contentc * sizeof(struct htmles))) == NULL) {
+			return NULL;
+		}
+	}
+	htmlesp->contentc = contentc;
+	if (text != NULL) {
+		if ((htmlesp->text = malloc ((strlen(text) + 1) * sizeof(char))) == NULL) {
+			return NULL;
+		}
+		strcpy(htmlesp->text, text);
+	} else {
+		htmlesp->text = NULL;
+	}
+
+	return htmlesp;
+}
+
+void
+htmlesfree(struct htmles *htmlesp) {
+	int i;
+
+	free(htmlesp->tag);
+	free(htmlesp->text);
+	for (i = 0; i < htmlesp->contentc; ++i) {
+		htmlesfree(htmlesp->contentv + i);
+	}
+	free(htmlesp->contentv);
+}
+
 int
-htmlelen(struct html_element *htmlep, int indent)
+htmlelen(struct htmles *htmlep, int indent)
 {
 	int i, l;
 
@@ -32,7 +76,7 @@ htmlelen(struct html_element *htmlep, int indent)
 }
 
 char *
-htmlstralloc(struct html_element *htmlep)
+htmlstralloc(struct htmles *htmlep)
 {
 	char *str;
 	int l;
@@ -44,7 +88,7 @@ htmlstralloc(struct html_element *htmlep)
 }
 
 int
-htmletostr(struct html_element *htmlep, char *str, int indent)
+htmlestostr(struct htmles *htmlep, char *str, int indent)
 {
 	int i, j;
 
@@ -60,7 +104,7 @@ htmletostr(struct html_element *htmlep, char *str, int indent)
 		i += strlen(htmlep->text) + indent + 2;
 	} else {
 		for (j = 0; j < htmlep->contentc; ++j) {
-			i += htmletostr(htmlep->contentv + j, str + i, indent + 1);
+			i += htmlestostr(htmlep->contentv + j, str + i, indent + 1);
 		}
 	}
 	strindent(str + i, indent);
